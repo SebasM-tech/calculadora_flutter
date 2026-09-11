@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:calculadora_flutter/main.dart';
+import 'package:calculadora_flutter/app/calculator_app.dart';
 
 Future<void> enterNumbers(WidgetTester tester, String a, String b) async {
   await tester.ensureVisible(find.byType(CupertinoTextField).at(0));

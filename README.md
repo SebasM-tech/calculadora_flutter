@@ -1,20 +1,36 @@
-# calculadora_flutter
+# Órbita · Calculadora Flutter
 
-A new Flutter project.
+Calculadora multiplataforma que incluye operaciones básicas, avanzadas y
+validación de paridad. El diseño se adapta a dispositivos móviles y escritorio.
 
-## Getting Started
+## Arquitectura
 
-This project is a starting point for a Flutter application.
+El código usa una arquitectura por funcionalidades con separación por capas:
 
-A few resources to get you started if this is your first Flutter project:
+```text
+lib/
+├── app/                         # Configuración general de la aplicación
+├── core/
+│   ├── constants/               # Constantes globales
+│   ├── errors/                  # Errores controlados
+│   └── theme/                   # Colores y tema visual
+├── features/
+│   └── calculator/
+│       ├── data/                # Modelos y repositorio de operaciones
+│       ├── logic/               # Estado, validaciones y controlador
+│       └── presentation/        # Pantalla y componentes visuales
+└── main.dart                    # Punto de entrada
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Esta organización mantiene la interfaz separada de los cálculos y facilita las
+pruebas, el mantenimiento y la incorporación de nuevas funcionalidades.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Validación
+
+```shell
+flutter analyze
+flutter test
+```
 
 
 
