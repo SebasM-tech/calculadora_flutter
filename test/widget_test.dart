@@ -1,20 +1,44 @@
-﻿import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:calculadora_flutter/main.dart';
 
 Future<void> enterNumbers(WidgetTester tester, String a, String b) async {
+  await tester.ensureVisible(find.byType(CupertinoTextField).at(0));
   await tester.enterText(find.byType(CupertinoTextField).at(0), a);
   await tester.enterText(find.byType(CupertinoTextField).at(1), b);
   await tester.pumpAndSettle();
 }
 
 void expectResult(String label, String value) {
-  final row = find.ancestor(of: find.text(label), matching: find.byType(Row)).first;
+  final row = find
+      .ancestor(of: find.text(label), matching: find.byType(Row))
+      .first;
   expect(find.descendant(of: row, matching: find.text(value)), findsOneWidget);
 }
 
 void main() {
-  testWidgets('Clasifica paridad y rechaza decimales y valores no finitos', (tester) async {
+  testWidgets('Diseno adaptable y boton para reiniciar', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    for (final size in [const Size(360, 800), const Size(1440, 1000)]) {
+      tester.view.physicalSize = size;
+      await tester.pumpWidget(const CalculatorApp());
+      await enterNumbers(tester, '17', '5');
+      expectResult('Cociente entero', '3');
+      expect(find.text('Ambos son impares'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.text('Empezar de nuevo'));
+      await tester.tap(find.text('Empezar de nuevo'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('parity')), findsNothing);
+      expect(find.text('Todo está por descubrir'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+  testWidgets('Clasifica paridad y rechaza decimales y valores no finitos', (
+    tester,
+  ) async {
     await tester.pumpWidget(const CalculatorApp());
     for (final sample in [
       ['0', '-2', 'Ambos son pares'],
@@ -32,7 +56,9 @@ void main() {
     }
   });
 
-  testWidgets('Cociente y residuo con signos, decimales y divisor cero', (tester) async {
+  testWidgets('Cociente y residuo con signos, decimales y divisor cero', (
+    tester,
+  ) async {
     await tester.pumpWidget(const CalculatorApp());
     for (final sample in [
       ['17', '5', '3', '2'],
@@ -50,8 +76,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Raices negativas admiten solo indices enteros impares', (tester) async {
+  testWidgets('Raices negativas admiten solo indices enteros impares', (
+    tester,
+  ) async {
     await tester.pumpWidget(const CalculatorApp());
+    await tester.ensureVisible(find.text('Avanzadas'));
     await tester.tap(find.text('Avanzadas'));
     await tester.pumpAndSettle();
     for (final sample in [
