@@ -1,30 +1,72 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:calculadora_flutter/main.dart';
 
+Future<void> enterNumbers(WidgetTester tester, String a, String b) async {
+  await tester.enterText(find.byType(CupertinoTextField).at(0), a);
+  await tester.enterText(find.byType(CupertinoTextField).at(1), b);
+  await tester.pumpAndSettle();
+}
+
+void expectResult(String label, String value) {
+  final row = find.ancestor(of: find.text(label), matching: find.byType(Row)).first;
+  expect(find.descendant(of: row, matching: find.text(value)), findsOneWidget);
+}
+
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Clasifica paridad y rechaza decimales y valores no finitos', (tester) async {
+    await tester.pumpWidget(const CalculatorApp());
+    for (final sample in [
+      ['0', '-2', 'Ambos son pares'],
+      ['-3', '5', 'Ambos son impares'],
+      ['2', '3', 'A es par y B es impar'],
+      ['3', '2', 'A es impar y B es par'],
+      ['2,5', '4', 'La paridad solo aplica a números enteros'],
+    ]) {
+      await enterNumbers(tester, sample[0], sample[1]);
+      expect(find.text(sample[2]), findsOneWidget);
+    }
+    for (final invalid in ['NaN', 'Infinity', 'abc', '']) {
+      await enterNumbers(tester, invalid, '2');
+      expect(find.byKey(const ValueKey('parity')), findsNothing);
+    }
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Cociente y residuo con signos, decimales y divisor cero', (tester) async {
+    await tester.pumpWidget(const CalculatorApp());
+    for (final sample in [
+      ['17', '5', '3', '2'],
+      ['-17', '5', '-3', '-2'],
+      ['17', '-5', '-3', '2'],
+      ['-17', '-5', '3', '-2'],
+      ['7.5', '2', '3', '1.5'],
+      ['0', '5', '0', '0'],
+      ['17', '0', '—', '—'],
+    ]) {
+      await enterNumbers(tester, sample[0], sample[1]);
+      expectResult('Cociente entero', sample[2]);
+      expectResult('Residuo', sample[3]);
+    }
+    expect(tester.takeException(), isNull);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('Raices negativas admiten solo indices enteros impares', (tester) async {
+    await tester.pumpWidget(const CalculatorApp());
+    await tester.tap(find.text('Avanzadas'));
+    await tester.pumpAndSettle();
+    for (final sample in [
+      ['-8', '3', '-2'],
+      ['-8', '-3', '-0.5'],
+      ['-8', '2', '—'],
+      ['-8', '2.5', '—'],
+      ['-8', '-2.5', '—'],
+      ['8', '0', '—'],
+      ['16', '2', '4'],
+      ['16', '0.5', '256'],
+    ]) {
+      await enterNumbers(tester, sample[0], sample[1]);
+      expectResult('Radicación (ᵇ√a)', sample[2]);
+    }
+    expect(tester.takeException(), isNull);
   });
 }

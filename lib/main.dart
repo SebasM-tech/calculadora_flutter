@@ -111,8 +111,8 @@ class _CalculatorHomeState extends State<CalculatorHome> {
   }
  
   void _onChanged() {
-    final newA = double.tryParse(_controllerA.text.replaceAll(',', '.'));
-    final newB = double.tryParse(_controllerB.text.replaceAll(',', '.'));
+    final newA = _parseNumber(_controllerA.text);
+    final newB = _parseNumber(_controllerB.text);
     if (newA != a || newB != b) {
       HapticFeedback.selectionClick();
     }
@@ -120,6 +120,22 @@ class _CalculatorHomeState extends State<CalculatorHome> {
       a = newA;
       b = newB;
     });
+  }
+
+  double? _parseNumber(String text) {
+    final value = double.tryParse(text.replaceAll(',', '.'));
+    return value != null && value.isFinite ? value : null;
+  }
+
+  String _parity() {
+    if (a! % 1 != 0 || b! % 1 != 0) {
+      return 'La paridad solo aplica a números enteros';
+    }
+    final aEven = a! % 2 == 0;
+    final bEven = b! % 2 == 0;
+    if (aEven && bEven) return 'Ambos son pares';
+    if (!aEven && !bEven) return 'Ambos son impares';
+    return aEven ? 'A es par y B es impar' : 'A es impar y B es par';
   }
  
   @override
@@ -132,7 +148,8 @@ class _CalculatorHomeState extends State<CalculatorHome> {
   double? _nthRoot(double value, double n) {
     if (n == 0) return null;
     if (value < 0) {
-      if (n % 2 == 0) return null; // sin solución real
+      // Para radicandos negativos se admiten solo índices enteros impares.
+      if (n % 1 != 0 || n % 2 == 0) return null;
       return -pow(-value, 1 / n).toDouble();
     }
     return pow(value, 1 / n).toDouble();
@@ -146,6 +163,12 @@ class _CalculatorHomeState extends State<CalculatorHome> {
       OpResult('Resta', CupertinoIcons.minus, av - bv),
       OpResult('Multiplicación', CupertinoIcons.multiply, av * bv),
       OpResult('División', CupertinoIcons.divide, bv != 0 ? av / bv : null),
+      OpResult(
+        'Cociente entero',
+        CupertinoIcons.divide,
+        bv != 0 && (av / bv).isFinite ? (av / bv).truncateToDouble() : null,
+      ),
+      OpResult('Residuo', CupertinoIcons.percent, bv != 0 ? av.remainder(bv) : null),
       OpResult('Módulo', CupertinoIcons.percent, bv != 0 ? av % bv : null),
       OpResult(
         'Potenciación (aᵇ)',
@@ -213,6 +236,15 @@ class _CalculatorHomeState extends State<CalculatorHome> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      if (hasValues) ...[
+                        Text(
+                          _parity(),
+                          key: const ValueKey('parity'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: p.textPrimary, fontSize: 15),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                       CupertinoSlidingSegmentedControl<int>(
                         groupValue: _segment,
                         backgroundColor: p.segmentedBg,
